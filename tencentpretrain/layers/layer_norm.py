@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import math
 
 class LayerNorm(nn.Module):
     """
@@ -55,3 +55,26 @@ class RMSNorm(torch.nn.Module):
     def forward(self, x):
         output = self._norm(x.float()).type_as(x)
         return output * self.weight
+
+class NormHead(nn.Module):
+    def __init__(self, hidden_size, vocab_size, bias=False):
+        super().__init__()
+        self.weight = nn.Parameter(torch.empty((vocab_size, hidden_size)))
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        self.first_flag = True
+
+    def forward(self, hidden_states):
+        """
+        如果是训练模式，则对权重进行归一化
+        如果不是训练模式但是首次前向传播，归一化权重并保存到模型的权重参数中
+        其他情况，直接使用权重参数
+        """
+        if self.training:
+            norm_weight = nn.functional.normalize(self.weight)
+        elif self.first_flag:
+            self.first_flag = False
+            self.weight = nn.Parameter(nn.functional.normalize(self.weight))
+            norm_weight = self.weight
+        else:
+            norm_weight = self.weight
+        return nn.functional.linear(hidden_states, norm_weight)

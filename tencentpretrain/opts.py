@@ -53,6 +53,12 @@ def model_opts(parser):
     parser.add_argument("--layer_number_scale", action="store_true",
                         help="whether use layer number scaling.")
 
+    parser.add_argument("--norm_head", action="store_true",
+                        help="whether use norm head.")
+    parser.add_argument("--z_loss", action="store_true",
+                        help="whether use z_loss.")
+
+
     vision_opts(parser)
     audio_opts(parser)
 
